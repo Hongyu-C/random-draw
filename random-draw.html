@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>抽签</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600&family=Noto+Sans+SC:wght@300;400;500&display=swap');
+
+  :root {
+    --bg: #0e0e10;
+    --bg2: #17171a;
+    --bg3: #1f1f24;
+    --border: rgba(255,255,255,0.08);
+    --border2: rgba(255,255,255,0.15);
+    --text: #e8e8e8;
+    --text2: #888;
+    --text3: #555;
+    --accent: #a78bfa;
+    --accent2: rgba(167,139,250,0.12);
+    --accent3: rgba(167,139,250,0.25);
+    --danger: rgba(239,100,100,0.15);
+    --danger-text: #f87171;
+    --radius: 12px;
+    --radius-sm: 8px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  body {
+    font-family: 'Noto Sans SC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    font-size: 15px;
+    line-height: 1.6;
+    padding-bottom: 40px;
+  }
+
+  /* ── header ── */
+  header {
+    padding: 24px 20px 0;
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+  }
+  header h1 {
+    font-family: 'Noto Serif SC', serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  header span {
+    font-size: 12px;
+    color: var(--text3);
+    letter-spacing: 0.05em;
+  }
+
+  /* ── tab bar ── */
+  .tabs {
+    display: flex;
+    gap: 0;
+    margin: 20px 20px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    padding: 10px 18px;
+    font-size: 13px;
+    font-family: 'Noto Sans SC', sans-serif;
+    background: none;
+    border: none;
+    color: var(--text2);
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color 0.2s, border-color 0.2s;
+    letter-spacing: 0.03em;
+  }
+  .tab.active {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+
+  .panel { display: none; padding: 20px; }
+  .panel.visible { display: block; }
+
+  /* ── section label ── */
+  .label {
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    font-weight: 500;
+  }
+
+  /* ── category block ── */
+  .cat-block {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    transition: border-color 0.2s;
+  }
+  .cat-block:focus-within { border-color: var(--border2); }
+
+  .cat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .cat-name {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--text);
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Noto Sans SC', sans-serif;
+    outline: none;
+    min-width: 0;
+    border-bottom: 1px solid transparent;
+    padding-bottom: 2px;
+    transition: border-color 0.2s;
+  }
+  .cat-name:focus { border-bottom-color: var(--border2); }
+  .cat-count { font-size: 11px; color: var(--text3); white-space: nowrap; }
+  .cat-del {
+    background: none;
+    border: none;
+    color: var(--text3);
+    cursor: pointer;
+    font-size: 13px;
+    padding: 2px 6px;
+    border-radius: 6px;
+    transition: background 0.15s, color 0.15s;
+  }
+  .cat-del:active { background: var(--danger); color: var(--danger-text); }
+
+  .items-list { display: flex; flex-direction: column; gap: 6px; }
+  .item-row { display: flex; align-items: center; gap: 6px; }
+  .item-input {
+    flex: 1;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    font-size: 14px;
+    font-family: 'Noto Sans SC', sans-serif;
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s;
+    min-width: 0;
+    -webkit-appearance: none;
+  }
+  .item-input:focus { border-color: var(--accent); }
+  .item-input.highlight { border-color: var(--accent); background: var(--accent2); }
+  .item-del {
+    width: 30px; height: 30px;
+    background: none; border: none;
+    color: var(--text3);
+    font-size: 18px;
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    transition: background 0.15s, color 0.15s;
+  }
+  .item-del:active { background: var(--danger); color: var(--danger-text); }
+
+  .add-item-btn {
+    margin-top: 8px;
+    width: 100%;
+    height: 34px;
+    background: none;
+    border: 1px dashed var(--border2);
+    border-radius: var(--radius-sm);
+    color: var(--text3);
+    font-size: 13px;
+    font-family: 'Noto Sans SC', sans-serif;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+  .add-item-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  .add-cat-btn {
+    width: 100%;
+    height: 42px;
+    background: none;
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    color: var(--text2);
+    font-size: 13px;
+    font-family: 'Noto Sans SC', sans-serif;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+    margin-top: 4px;
+  }
+  .add-cat-btn:active { border-color: var(--accent); color: var(--accent); }
+
+  /* ── draw panel ── */
+  .filter-wrap { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 18px; }
+  .chip {
+    padding: 5px 12px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    font-size: 12px;
+    font-family: 'Noto Sans SC', sans-serif;
+    cursor: pointer;
+    background: none;
+    color: var(--text2);
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .chip.active {
+    background: var(--accent2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .draw-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+  }
+  .count-wrap { display: flex; align-items: center; gap: 8px; }
+  .count-wrap label { font-size: 13px; color: var(--text2); }
+  .count-input {
+    width: 54px; height: 36px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    color: var(--text);
+    font-size: 15px;
+    text-align: center;
+    font-family: 'Noto Sans SC', sans-serif;
+    outline: none;
+    -webkit-appearance: none;
+  }
+  .no-repeat-wrap { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .no-repeat-wrap label { font-size: 13px; color: var(--text2); cursor: pointer; }
+  input[type=checkbox] { accent-color: var(--accent); width: 15px; height: 15px; cursor: pointer; }
+
+  .draw-btn {
+    height: 44px;
+    padding: 0 24px;
+    background: var(--accent2);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius);
+    color: var(--accent);
+    font-size: 15px;
+    font-family: 'Noto Serif SC', serif;
+    font-weight: 600;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+    transition: background 0.15s, transform 0.1s;
+    flex-shrink: 0;
+  }
+  .draw-btn:active { background: var(--accent3); transform: scale(0.97); }
+
+  .result-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+  }
+  .result-header .label { margin-bottom: 0; flex: 1; }
+  .clear-btn {
+    font-size: 12px;
+    color: var(--text3);
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: 'Noto Sans SC', sans-serif;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .clear-btn:active { color: var(--danger-text); }
+
+  .result-area { display: flex; flex-direction: column; gap: 8px; }
+  .result-empty { font-size: 14px; color: var(--text3); text-align: center; padding: 2rem 0; }
+
+  .result-pill {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    animation: pop 0.3s ease;
+  }
+  .result-pill.new {
+    background: var(--accent2);
+    border-color: var(--accent);
+  }
+  @keyframes pop {
+    from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+  .result-text {
+    flex: 1;
+    font-size: 17px;
+    font-weight: 500;
+    color: var(--text);
+    font-family: 'Noto Serif SC', serif;
+  }
+  .result-cat {
+    font-size: 11px;
+    color: var(--accent);
+    white-space: nowrap;
+    letter-spacing: 0.04em;
+  }
+
+  /* ── empty state ── */
+  .no-items { font-size: 13px; color: var(--text3); padding: 4px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>抽签</h1>
+  <span>创意关键词工具</span>
+</header>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('edit')">编辑选项</button>
+  <button class="tab" onclick="switchTab('draw')">随机抽签</button>
+</div>
+
+<div id="panel-edit" class="panel visible">
+  <div class="label">分类与选项</div>
+  <div id="cats-container"></div>
+  <button class="add-cat-btn" onclick="addCategory()">＋ 添加分类</button>
+</div>
+
+<div id="panel-draw" class="panel">
+  <div class="label">选择分类</div>
+  <div class="filter-wrap" id="filter-wrap"></div>
+
+  <div class="draw-controls">
+    <div class="count-wrap">
+      <label>抽取数量</label>
+      <input type="number" class="count-input" id="draw-count" min="1" value="1">
+    </div>
+    <div class="no-repeat-wrap">
+      <input type="checkbox" id="no-repeat">
+      <label for="no-repeat">不重复</label>
+    </div>
+    <button class="draw-btn" onclick="doDraw()">抽签</button>
+  </div>
+
+  <div class="result-header">
+    <div class="label">抽签结果</div>
+    <button class="clear-btn" onclick="clearResults()">清空</button>
+  </div>
+  <div class="result-area" id="result-area">
+    <div class="result-empty">点击「抽签」开始</div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'draw-app-v1';
+
+let state = {
+  categories: [
+    { id: 1, name: '风格', items: ['赛博朋克', '古典写实', '浮世绘', '包豪斯', 'Art Nouveau'] },
+    { id: 2, name: '情绪', items: ['忧郁', '狂喜', '平静', '愤怒', '孤独'] },
+    { id: 3, name: '元素', items: ['火', '水', '风', '光', '暗'] }
+  ],
+  activeFilter: 'all',
+  nextId: 4,
+  results: []
+};
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch(e) {}
+}
+function load() {
+  try {
+    const d = localStorage.getItem(STORAGE_KEY);
+    if (d) state = JSON.parse(d);
+  } catch(e) {}
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach((t, i) => {
+    t.classList.toggle('active', (i === 0) === (tab === 'edit'));
+  });
+  document.getElementById('panel-edit').classList.toggle('visible', tab === 'edit');
+  document.getElementById('panel-draw').classList.toggle('visible', tab === 'draw');
+  if (tab === 'draw') renderFilter();
+}
+
+function renderEdit() {
+  const c = document.getElementById('cats-container');
+  c.innerHTML = '';
+  state.categories.forEach(cat => {
+    const block = document.createElement('div');
+    block.className = 'cat-block';
+    block.innerHTML = `
+      <div class="cat-header">
+        <input class="cat-name" value="${esc(cat.name)}" placeholder="分类名"
+          oninput="renameCategory(${cat.id}, this.value)">
+        <span class="cat-count">${cat.items.length} 项</span>
+        <button class="cat-del" onclick="deleteCategory(${cat.id})">删除</button>
+      </div>
+      <div class="items-list" id="list-${cat.id}">
+        ${cat.items.map((item, i) => `
+          <div class="item-row">
+            <input class="item-input" value="${esc(item)}" placeholder="输入关键词…"
+              oninput="updateItem(${cat.id}, ${i}, this.value)"
+              onkeydown="handleKey(event, ${cat.id}, ${i})">
+            <button class="item-del" onclick="deleteItem(${cat.id}, ${i})">×</button>
+          </div>
+        `).join('')}
+        ${cat.items.length === 0 ? '<div class="no-items">还没有选项，点下方添加</div>' : ''}
+      </div>
+      <button class="add-item-btn" onclick="addItem(${cat.id})">＋ 添加选项</button>
+    `;
+    c.appendChild(block);
+  });
+}
+
+function renderFilter() {
+  const f = document.getElementById('filter-wrap');
+  let html = `<button class="chip ${state.activeFilter === 'all' ? 'active' : ''}"
+    onclick="setFilter('all')">全部</button>`;
+  state.categories.forEach(cat => {
+    html += `<button class="chip ${state.activeFilter === cat.id ? 'active' : ''}"
+      onclick="setFilter(${cat.id})">${esc(cat.name)}</button>`;
+  });
+  f.innerHTML = html;
+}
+
+function setFilter(id) {
+  state.activeFilter = id;
+  renderFilter();
+}
+
+function addCategory() {
+  state.categories.push({ id: state.nextId++, name: '新分类', items: [] });
+  save(); renderEdit();
+  const inputs = document.querySelectorAll('.cat-name');
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+function deleteCategory(id) {
+  if (!confirm('删除这个分类吗？')) return;
+  state.categories = state.categories.filter(c => c.id !== id);
+  save(); renderEdit();
+}
+function renameCategory(id, name) {
+  const c = state.categories.find(c => c.id === id);
+  if (c) { c.name = name; save(); }
+}
+function addItem(catId) {
+  const c = state.categories.find(c => c.id === catId);
+  if (!c) return;
+  c.items.push('');
+  save(); renderEdit();
+  const inputs = document.querySelectorAll(`#list-${catId} .item-input`);
+  if (inputs.length) inputs[inputs.length - 1].focus();
+}
+function updateItem(catId, idx, val) {
+  const c = state.categories.find(c => c.id === catId);
+  if (c) { c.items[idx] = val; save(); }
+}
+function deleteItem(catId, idx) {
+  const c = state.categories.find(c => c.id === catId);
+  if (!c) return;
+  c.items.splice(idx, 1);
+  save(); renderEdit();
+}
+function handleKey(e, catId, idx) {
+  if (e.key === 'Enter') { e.preventDefault(); addItem(catId); }
+}
+
+function doDraw() {
+  let pool = [];
+  state.categories.forEach(cat => {
+    if (state.activeFilter === 'all' || state.activeFilter === cat.id) {
+      cat.items.filter(i => i.trim()).forEach(item => pool.push({ text: item, cat: cat.name }));
+    }
+  });
+  if (!pool.length) { alert('选中分类里没有任何选项！'); return; }
+
+  const count = Math.max(1, parseInt(document.getElementById('draw-count').value) || 1);
+  const noRepeat = document.getElementById('no-repeat').checked;
+  let picked = [];
+
+  if (noRepeat) {
+    const shuffled = [...pool].sort(() => Math.random() - 0.5);
+    picked = shuffled.slice(0, Math.min(count, shuffled.length));
+  } else {
+    for (let i = 0; i < count; i++) picked.push(pool[Math.floor(Math.random() * pool.length)]);
+  }
+
+  state.results = picked.concat(state.results).slice(0, 50);
+  save();
+  renderResults(count);
+}
+
+function renderResults(newCount) {
+  const area = document.getElementById('result-area');
+  if (!state.results.length) {
+    area.innerHTML = '<div class="result-empty">点击「抽签」开始</div>';
+    return;
+  }
+  area.innerHTML = state.results.map((r, i) => `
+    <div class="result-pill ${i < (newCount || 0) ? 'new' : ''}">
+      <span class="result-text">${esc(r.text)}</span>
+      <span class="result-cat">${esc(r.cat)}</span>
+    </div>
+  `).join('');
+}
+
+function clearResults() {
+  state.results = [];
+  save();
+  renderResults(0);
+}
+
+load();
+renderEdit();
+renderFilter();
+if (state.results.length) renderResults(0);
+</script>
+</body>
+</html>
